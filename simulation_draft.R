@@ -34,16 +34,16 @@ lr7 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = make_learner(
 
 
 # stack the learners into a super learner
-stack <- Stack$new(lr1, lr2, lr3, lr4, lr5, lr6, lr7) 
+stack <- Stack$new(lr1, lr2, lr3, lr4, lr5, lr7) 
 sl <- Lrnr_sl$new(stack, metalearner = Lrnr_solnp$new(
-                            eval_function = loss_weighted_loglik_densratio ))
+                            eval_function = loss_weighted_loglik_densratio))
 n = 400
 for (i in 1){
     # generate a data
     data <- setdata(n)
     data$indicator <- data$a
     # define a task
-    task <- sl3_Task$new(data = data, covariates = c('m', 'x', 'w'), outcome = 'indicator')
+    task <- sl3_Task$new(data = data, covariates = c('m', 'x', 'w'), outcome = 'indicator', folds = 3)
     # train the super learner
     sl_fit <- sl$train(task = task)
 }
@@ -62,7 +62,7 @@ density_a_0 <- I(pre_w==1) * 2 * dnorm(pre_m, 0.2 * pre_x + 2 * pre_a, 2) +
 true_ratio <- density_a_1 / density_a_0
 # get the predictions
 pred_data <- data.frame(x = pre_x, m = pre_m, w = pre_m)
-pred_task <- sl3_Task$new(data = pred_data, covariates = c('x', 'm', 'w'))
+pred_task <- sl3_Task$new(data = pred_data, covariates = c('x', 'm', 'w'), folds = 3)
 sl_preds <- sl_fit$predict(task = pred_task)
 
 sl_preds <- sl_fit$predict(pred_task)
@@ -71,7 +71,7 @@ lr2_preds <- sl_fit$learner_fits$lr2$predict(pred_task)
 lr3_preds <- sl_fit$learner_fits$lr3$predict(pred_task)
 lr4_preds <- sl_fit$learner_fits$lr4$predict(pred_task)
 lr5_preds <- sl_fit$learner_fits$lr5$predict(pred_task)
-lr6_preds <- sl_fit$learner_fits$`Pipeline(lr6->)`$predict(pred_task)
+# lr6_preds <- sl_fit$learner_fits$`Pipeline(lr6->)`$predict(pred_task)
 lr7_preds <- sl_fit$learner_fits$`Pipeline(lr7->)`$predict(pred_task)
 
 # Create the scatter plot
@@ -81,8 +81,7 @@ points(true_ratio, lr1_preds, col = "blue", pch = 16)
 points(true_ratio, lr2_preds, col = "green", pch = 16)
 points(true_ratio, lr3_preds, col = "orange", pch = 16)
 points(true_ratio, lr4_preds, col = "purple", pch = 16)
-points(true_ratio, sl_preds, col = "red", pch = 16)
-points(true_ratio, lr6_preds, col = 'cyan', pch = 16)
+points(true_ratio, lr7_preds, col = 'cyan', pch = 16)
 lines(true_ratio, true_ratio)
 legend("topright", 
        legend = c(
