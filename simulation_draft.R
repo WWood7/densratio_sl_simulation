@@ -21,17 +21,20 @@ setdata <- function(n){
 
 # define learners
 lr1 <- Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.5, name = 'lr1')
-lr2 <- Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 70, alpha = 0.4, name = 'lr2')
-lr3 <- Lrnr_densratio_kernel$new(method = 'uLSIF', kernel_num = 200, name = 'lr3')
-lr4 <- Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 200, 
-                                 fold_num = 8, name = 'lr4')
-lr5 <- Lrnr_densratio_classification$new(name = 'lr5')
-lr6 <- Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_hal9001),name = 'lr6')
+lr2 <- Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.2, name = 'lr2')
+lr3 <- Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.8, name = 'lr3')
+lr4 <- Lrnr_densratio_kernel$new(method = 'uLSIF', kernel_num = 200, name = 'lr4')
+lr5 <- Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 200, 
+                                 fold_num = 8, name = 'lr5')
+lr6 <- Pipeline$new(Lrnr_densratio_classification$new(name = 'lr6'), 
+                    Lrnr_densratio_classification$new(stage2 = TRUE, name = ''))
+lr7 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_dbarts), name = 'lr7'), 
+                    Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_bayesglm), stage2 = TRUE, name = ''))
 
 
 
 # stack the learners into a super learner
-stack <- Stack$new(lr1, lr2, lr3, lr4, lr5, lr6) 
+stack <- Stack$new(lr1, lr2, lr3, lr4, lr5, lr6, lr7) 
 sl <- Lrnr_sl$new(stack, metalearner = Lrnr_solnp$new(
                             eval_function = loss_weighted_loglik_densratio ))
 n = 400
@@ -40,7 +43,7 @@ for (i in 1){
     data <- setdata(n)
     data$indicator <- data$a
     # define a task
-    task <- sl3_Task$new(data = data, covariates = c('x', 'm', 'w'), outcome = 'indicator')
+    task <- sl3_Task$new(data = data, covariates = c('m', 'x', 'w'), outcome = 'indicator')
     # train the super learner
     sl_fit <- sl$train(task = task)
 }
@@ -68,17 +71,18 @@ lr2_preds <- sl_fit$learner_fits$lr2$predict(pred_task)
 lr3_preds <- sl_fit$learner_fits$lr3$predict(pred_task)
 lr4_preds <- sl_fit$learner_fits$lr4$predict(pred_task)
 lr5_preds <- sl_fit$learner_fits$lr5$predict(pred_task)
-
+lr6_preds <- sl_fit$learner_fits$`Pipeline(lr6->)`$predict(pred_task)
+lr7_preds <- sl_fit$learner_fits$`Pipeline(lr7->)`$predict(pred_task)
 
 # Create the scatter plot
 plot(true_ratio, sl_preds, col = "red", pch = 16, xlab = "true_ratio", 
-     ylab = "sl_preds", main = "Scatter Plot", ylim = c(0, 20))
+     ylab = "sl_preds", main = "Scatter Plot")
 points(true_ratio, lr1_preds, col = "blue", pch = 16)
 points(true_ratio, lr2_preds, col = "green", pch = 16)
 points(true_ratio, lr3_preds, col = "orange", pch = 16)
 points(true_ratio, lr4_preds, col = "purple", pch = 16)
 points(true_ratio, sl_preds, col = "red", pch = 16)
-points(true_ratio, lr5_preds, col = 'cyan', pch = 16)
+points(true_ratio, lr6_preds, col = 'cyan', pch = 16)
 lines(true_ratio, true_ratio)
 legend("topright", 
        legend = c(
