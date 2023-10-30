@@ -7,6 +7,12 @@ library(reshape2)
 
 # define a function to set the data
 # n as sample size
+# x = |x1| + x2 where x1 ~ N(0,4), x2 ~ Gamma(7.5, 1)
+# w ~ bernoulli(0.5)
+# a|x,w ~ bernoulli(0.4 + 0.15I(x>7.5) + 0.05I(x<6) + 0.1I(x<3) + 0.1I(w==1))
+# m|x,w=1,a ~ |N(0.2x + 2a, 4)|
+# m|x,w=0,a ~ Gamma(0.3x, a + 1)
+# estimate p(m|x,w,a=1) / p(m|x,w,a=0)
 setdata <- function(n){
     x <- abs(rnorm(n, 0, 2)) + rgamma(n, shape = 7.5, scale = 1)
     w <- rbinom(n, 1, 0.5)
