@@ -74,7 +74,7 @@ ggplot(data_long_400, aes(x=factor(Var1, levels=unique(Var1)), y=value)) +
      geom_point(aes(group=Var1), position=position_jitter(width=0.1, height=0)) +
      geom_point(aes(y=RowMean, x=factor(Var1, levels=unique(Var1))), shape=3, size=3, color="red") +
      theme_minimal() +
-     labs(y="Loss(n=400", x="Learners") +
+     labs(y="cv_risk(n=400)", x="Learners") +
      coord_flip()
 
 
@@ -103,7 +103,7 @@ ggplot(data_long_1000, aes(x=factor(Var1, levels=unique(Var1)), y=value)) +
     geom_point(aes(group=Var1), position=position_jitter(width=0.1, height=0)) +
     geom_point(aes(y=RowMean, x=factor(Var1, levels=unique(Var1))), shape=3, size=3, color="red") +
     theme_minimal() +
-    labs(y="Loss(n=1000)", x="Learners") +
+    labs(y="cv_risk(n=1000)", x="Learners") +
     coord_flip()
 
 
