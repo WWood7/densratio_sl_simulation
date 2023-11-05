@@ -51,6 +51,9 @@ for (i in 1:5){
     # generate a data
     data <- setdata(n)
     data$indicator <- data$a
+    # normalize the data
+    data$m <- data$m / sd(data$m)
+    data$x <- data$x / sd(data$x)
     # define a task
     task <- sl3_Task$new(data = data, covariates = c('m', 'x', 'w'), outcome = 'indicator', folds = 3)
     # train the super learner
@@ -86,11 +89,14 @@ ggplot(data_long_400, aes(x=factor(Var1, levels=unique(Var1)), y=value)) +
 
 
 risk_matrix2 <- NULL
-n = 1000
+n = 100
 for (i in 1:5){
     # generate a data
     data <- setdata(n)
     data$indicator <- data$a
+    # normalize the data
+    data$m <- data$m / sd(data$m)
+    data$x <- data$x / sd(data$x)
     # define a task
     task <- sl3_Task$new(data = data, covariates = c('m', 'x', 'w'), outcome = 'indicator', folds = 3)
     # train the super learner
