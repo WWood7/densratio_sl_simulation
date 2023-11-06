@@ -57,10 +57,10 @@ iter = as.numeric(iter)
 args = commandArgs(trailingOnly = TRUE)
 nloop = as.numeric(args[1])
 # get task id
-max_jobs = 2
+max_jobs = 10
 task_id = max_jobs*(nloop-1) + iter
 seed = as.numeric(params[task_id,][1])
-n = as.numeric(params[task_id,][1])
+n = as.numeric(params[task_id,][2])
 set.seed(seed)
 
 

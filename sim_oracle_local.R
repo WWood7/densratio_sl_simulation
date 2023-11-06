@@ -1,6 +1,6 @@
-setwd("/home/wwu227/my_packages/sl3_densratio")
+setwd("/Users/winnwu/Documents/GitHub/sl3_densratio")
 devtools::load_all()
-setwd("/home/wwu227/my_packages/densratio")
+setwd("/Users/winnwu/Documents/GitHub/densratio")
 devtools::load_all()
 
 
@@ -51,16 +51,18 @@ sl <- Lrnr_sl$new(stack, metalearner = Lrnr_solnp$new(
 
 # import environment parameter
 # get iter from array
-iter = Sys.getenv("SLURM_ARRAY_TASK_ID")
-iter = as.numeric(iter)
+# iter = Sys.getenv("SLURM_ARRAY_TASK_ID")
+# iter = as.numeric(iter)
+iter = 1
 # get nloop
-args = commandArgs(trailingOnly = TRUE)
-nloop = as.numeric(args[1])
+# args = commandArgs(trailingOnly = TRUE)
+# nloop = as.numeric(args[1])
+nloop = 1
 # get task id
 max_jobs = 2
 task_id = max_jobs*(nloop-1) + iter
 seed = as.numeric(params[task_id,][1])
-n = as.numeric(params[task_id,][1])
+n = as.numeric(params[task_id,][2])
 set.seed(seed)
 
 
