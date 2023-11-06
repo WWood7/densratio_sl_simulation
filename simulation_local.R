@@ -45,52 +45,52 @@ sl <- Lrnr_sl$new(stack, metalearner = Lrnr_solnp$new(
     eval_function = loss_weighted_loglik_densratio ))
 
 
-n = 400
-risk_matrix1 <- NULL
-for (i in 1:5){
-    # generate a data
-    data <- setdata(n)
-    data$indicator <- data$a
-    # normalize the data
-    data$m <- data$m / sd(data$m)
-    data$x <- data$x / sd(data$x)
-    # define a task
-    task <- sl3_Task$new(data = data, covariates = c('m', 'x', 'w'), outcome = 'indicator', folds = 3)
-    # train the super learner
-    risk_table <- CV_lrnr_sl(sl, task, loss_weighted_loglik_densratio)
-    temp_risk <- as.matrix(risk_table[1:8, 3])
-    risk_matrix1 <- cbind(risk_matrix1, temp_risk)
-}
-
-
-risk_means_400 <- apply(risk_matrix1, 1, mean)
-data_long_400 <- as.data.frame(as.table(risk_matrix1))
-data_long_400$Var1 <- c('lr1', 'lr2', 'lr3', 'lr4', 'lr5', 'lr6', 'lr7', 'sl')
-
-ggplot(data_long_400, aes(x=Var1, y=Freq)) +
-    geom_point(aes(group=Var1), position=position_jitter(width=0.1, height=0)) +
-    geom_point(aes(y=risk_means_400[Var1], x=Var1), shape=3, size=3, color="red") +
-    theme_minimal() +
-    labs(y="Relative MSE", x="Method") +
-    coord_flip()
-
-
-data_long_400 <- melt(risk_matrix1)
-data_long_400$RowMean <- apply(risk_matrix1, 1, mean)[data_long_400$Var1]
-data_long_400$Var1 <- c('lr1', 'lr2', 'lr3', 'lr4', 'lr5', 'lr6', 'lr7', 'sl')
-data_long_400 <- data_long_400[order(-data_long_400$RowMean), ]
-ggplot(data_long_400, aes(x=factor(Var1, levels=unique(Var1)), y=value)) +
-     geom_point(aes(group=Var1), position=position_jitter(width=0.1, height=0)) +
-     geom_point(aes(y=RowMean, x=factor(Var1, levels=unique(Var1))), shape=3, size=3, color="red") +
-     theme_minimal() +
-     labs(y="cv_risk(n=400)", x="Learners") +
-     coord_flip()
+# n = 400
+# risk_matrix1 <- NULL
+# for (i in 1:5){
+#     # generate a data
+#     data <- setdata(n)
+#     data$indicator <- data$a
+#     # normalize the data
+#     data$m <- data$m / sd(data$m)
+#     data$x <- data$x / sd(data$x)
+#     # define a task
+#     task <- sl3_Task$new(data = data, covariates = c('m', 'x', 'w'), outcome = 'indicator', folds = 3)
+#     # train the super learner
+#     risk_table <- CV_lrnr_sl(sl, task, loss_weighted_loglik_densratio)
+#     temp_risk <- as.matrix(risk_table[1:8, 3])
+#     risk_matrix1 <- cbind(risk_matrix1, temp_risk)
+# }
+# 
+# 
+# risk_means_400 <- apply(risk_matrix1, 1, mean)
+# data_long_400 <- as.data.frame(as.table(risk_matrix1))
+# data_long_400$Var1 <- c('lr1', 'lr2', 'lr3', 'lr4', 'lr5', 'lr6', 'lr7', 'sl')
+# 
+# ggplot(data_long_400, aes(x=Var1, y=Freq)) +
+#     geom_point(aes(group=Var1), position=position_jitter(width=0.1, height=0)) +
+#     geom_point(aes(y=risk_means_400[Var1], x=Var1), shape=3, size=3, color="red") +
+#     theme_minimal() +
+#     labs(y="Relative MSE", x="Method") +
+#     coord_flip()
+# 
+# 
+# data_long_400 <- melt(risk_matrix1)
+# data_long_400$RowMean <- apply(risk_matrix1, 1, mean)[data_long_400$Var1]
+# data_long_400$Var1 <- c('lr1', 'lr2', 'lr3', 'lr4', 'lr5', 'lr6', 'lr7', 'sl')
+# data_long_400 <- data_long_400[order(-data_long_400$RowMean), ]
+# ggplot(data_long_400, aes(x=factor(Var1, levels=unique(Var1)), y=value)) +
+#      geom_point(aes(group=Var1), position=position_jitter(width=0.1, height=0)) +
+#      geom_point(aes(y=RowMean, x=factor(Var1, levels=unique(Var1))), shape=3, size=3, color="red") +
+#      theme_minimal() +
+#      labs(y="cv_risk(n=400)", x="Learners") +
+#      coord_flip()
 
 
 
 risk_matrix2 <- NULL
 n = 100
-for (i in 1:5){
+for (i in 1:2){
     # generate a data
     data <- setdata(n)
     data$indicator <- data$a
@@ -117,6 +117,7 @@ ggplot(data_long_1000, aes(x=factor(Var1, levels=unique(Var1)), y=value)) +
     theme_minimal() +
     labs(y="cv_risk(n=1000)", x="Learners") +
     coord_flip()
-
+filename = paste0("result_seed", 1, "_n", n, "_", ".rds")
+saveRDS(data_long_1000, file = filename)
 
 
