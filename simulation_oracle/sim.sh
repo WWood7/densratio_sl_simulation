@@ -1,4 +1,4 @@
-
+# !/bin/bash
 # chmod u+x sim.sh
 # ./sim.sh sim.R sim
 
@@ -20,7 +20,7 @@ username=$(id -nu)
 
 # submit first batch of jobs
 for i in $(seq 1 ${loops}); do
-	echo "#!/bin/bash" >> script$i.sh
+	echo "#!/bin/bash" > script$i.sh
 	echo "#SBATCH --array=1-$max_jobs" >> script$i.sh
 	echo "#SBATCH --partition=day-long-cpu" >> script$i.sh
 	echo "#SBATCH --error=${myscratch}/err/${analysis}$i.err" >> script$i.sh
