@@ -25,15 +25,19 @@ setdata <- function(n){
 
 # define a grid of parameters for the simulation
 # 10 replicates at each sample size in each setting
-params = expand.grid(seed = 1:10,
+params = expand.grid(seed = 1:100,
                     n = c(100, 500, 1000, 2000))
 
 
 # define learners
-lr1 <- Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.5, name = 'lr1')
-lr2 <- Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.2, name = 'lr2')
-lr3 <- Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.8, name = 'lr3')
-lr4 <- Lrnr_densratio_kernel$new(method = 'uLSIF', kernel_num = 200, name = 'lr4')
+lr1 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.5, name = 'lr1'), 
+                    Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.5, name = '', stage2 = TRUE))
+lr2 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.8, name = 'lr2'), 
+                    Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.8, name = '', stage2 = TRUE))
+lr2 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.8, name = 'lr2'), 
+                    Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.8, name = '', stage2 = TRUE))
+lr4 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 100, fold_num = 4, name = 'lr4'), 
+                    Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 100, fold_num = 4, name = '', stage2 = TRUE))
 lr5 <- Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 200, 
                                  fold_num = 8, name = 'lr5')
 lr6 <- Pipeline$new(Lrnr_densratio_classification$new(name = 'lr6'), 

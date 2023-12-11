@@ -35,8 +35,8 @@ lr5 <- Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 200,
                                  fold_num = 8, name = 'lr5')
 lr6 <- Pipeline$new(Lrnr_densratio_classification$new(name = 'lr6'), 
                     Lrnr_densratio_classification$new(stage2 = TRUE, name = ''))
-lr7 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_dbarts), name = 'lr7'), 
-                    Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_bayesglm), stage2 = TRUE, name = ''))
+lr7 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.8, name = 'lr7'), 
+                    Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.8, name = '', stage2 = TRUE))
 
 
 # stack the learners into a super learner
@@ -90,7 +90,7 @@ sl <- Lrnr_sl$new(stack, metalearner = Lrnr_solnp$new(
 
 risk_matrix2 <- NULL
 n = 100
-for (i in 1:2){
+for (i in 1:5){
     # generate a data
     data <- setdata(n)
     data$indicator <- data$a

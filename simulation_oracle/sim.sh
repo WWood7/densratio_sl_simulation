@@ -7,7 +7,7 @@ maildom='@emory.edu'   # your email domain (for receiving error messages)
 myscratch="/home/wwu227/thesis/oracle/scratch"  # location of your persistent scratch dir
 resultdir="/home/wwu227/thesis/oracle/scratch/out"  # This is a folder in permanent storage
 script=$1      # your code as (R or Python) script (1st arg)
-max_jobs=10  # max number of jobs 10
+max_jobs=100  # max number of jobs 10
 loops=4   # total number of jobs 2
 
 
