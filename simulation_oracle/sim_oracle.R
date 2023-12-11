@@ -34,7 +34,7 @@ lr1 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 10
                     Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.5, name = '', stage2 = TRUE))
 lr2 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.8, name = 'lr2'), 
                     Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.8, name = '', stage2 = TRUE))
-lr2 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.8, name = 'lr2'), 
+lr3 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.8, name = 'lr2'), 
                     Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.8, name = '', stage2 = TRUE))
 lr4 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 100, fold_num = 4, name = 'lr4'), 
                     Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 100, fold_num = 4, name = '', stage2 = TRUE))
@@ -61,7 +61,7 @@ iter = as.numeric(iter)
 args = commandArgs(trailingOnly = TRUE)
 nloop = as.numeric(args[1])
 # get task id
-max_jobs = 10
+max_jobs = 100
 task_id = max_jobs*(nloop-1) + iter
 seed = as.numeric(params[task_id,][1])
 n = as.numeric(params[task_id,][2])
