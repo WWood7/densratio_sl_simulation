@@ -25,8 +25,8 @@ for (i in 1:4){
 for (i in 1:4){
     data <- results[[i]][, c(1, 3)]
     data <- data[order(data$learner), ]
-    data$learner <- c(rep('lr7', 100), rep('lr2', 100), rep('lr3', 100), rep('lr1', 100), 
-                      rep('lr4', 100), rep('lr5', 100), rep('lr8', 100), rep('lr6', 100),
+    data$learner <- c(rep('lr1', 100), rep('lr2', 100), rep('lr3', 100), rep('lr4', 100), 
+                      rep('lr5', 100), rep('lr6', 100), rep('lr7', 100), rep('lr8', 100),
                       rep('sl', 100))
     # Calculate the mean for each learner
     mean_data <- aggregate(WNLL ~ learner, data = data, FUN = mean)
