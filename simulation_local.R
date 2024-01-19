@@ -41,12 +41,12 @@ lr6 <- Pipeline$new(Lrnr_densratio_classification$new(name = 'lr6'),
                     Lrnr_densratio_classification$new(stage2 = TRUE, name = ''))
 lr7 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_dbarts), name = 'lr7'), 
                     Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_bayesglm), stage2 = TRUE, name = ''))
-lr8 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_hal9001), name = 'lr8'), 
-                    Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_glm), stage2 = TRUE, name = ''))
+# lr8 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_hal9001), name = 'lr8'), 
+#                    Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_glm), stage2 = TRUE, name = ''))
 
 
 # stack the learners into a super learner
-stack <- Stack$new(lr1, lr2, lr3, lr4, lr5, lr6, lr7, lr8) 
+stack <- Stack$new(lr1, lr2, lr3, lr4, lr5, lr6, lr7) 
 sl <- Lrnr_sl$new(stack, metalearner = Lrnr_solnp$new(
     eval_function = loss_weighted_loglik_densratio ))
 
@@ -123,7 +123,7 @@ ggplot(data_long_1000, aes(x=factor(Var1, levels=unique(Var1)), y=value)) +
     theme_minimal() +
     labs(y="cv_risk(n=1000)", x="Learners") +
     coord_flip()
-filename = paste0("result_seed", 1, "_n", n, "_", ".rds")
-saveRDS(data_long_1000, file = filename)
+# filename = paste0("result_seed", 1, "_n", n, "_", ".rds")
+# saveRDS(data_long_1000, file = filename)
 
 
