@@ -2,7 +2,7 @@ setwd("/Users/winnwu/Documents/GitHub/sl3_densratio")
 devtools::load_all()
 setwd("/Users/winnwu/Documents/GitHub/densratio")
 devtools::load_all()
-
+library(msm)
 
 # define a function to set the data
 # w = |w1| + w2 where w1 ~ N(0,4), w2 ~ Gamma(7.5, 1)
@@ -11,9 +11,9 @@ devtools::load_all()
 # m|w,a=0 ~ Beta(0.8w, 0.5w)
 # y|a, m, w ~ N(5 + 1.5a + 2m + 5m^2 + 0.3w, 4)
 setdata <- function(n){
-    w <- abs(rnorm(n, 0, 2)) + rgamma(n, shape = 7.5, scale = 1)
-    a <- rbinom(n, 1, 0.4 - 0.15*I(w>7.5) + 0.15*I(w>9) + 0.25*I(w<6) - 0.1*I(w<3))
-    m <- (a == 1) * rbeta(n, 0.5 * w, 0.8 * w) + (a == 0) * rbeta(n, 0.8 * w, 0.5 * w)
+    w <- rtnorm(n, mean = 5, sd = 0.5, lower = 2, upper = 8)
+    a <- rbinom(n, 1, 0.4 - 0.15*I(w>7.5) + 0.25*I(w<6) - 0.35*I(w<4))
+    m <- (a == 1) * rbeta(n,  w, w + 2) + (a == 0) * rbeta(n, 2 + w, w)
     y <- rnorm(n, 5 + 1.5 * a + 2 * m + 5 * m^2 + 0.3 * w, sd = 2)
     df <- data.frame(w = w, a = a, m = m, y = y)
 }
@@ -22,8 +22,8 @@ setdata <- function(n){
 true_val_data <- setdata(10000000)
 # E[E(Y|A=0, M, W)|A=1, W]]
 # 5 + 2E(M|A=1, W) + 5E(M^2|A=1, W) + 0.3W
-shape_param1 <- 0.5 * true_val_data$w
-shape_param2 <- 0.8 * true_val_data$w
+shape_param1 <-  true_val_data$w
+shape_param2 <- 2 + true_val_data$w
 moment1 <- shape_param1 / (shape_param1 + shape_param2)
 moment2 <- moment1^2 + shape_param1 * shape_param2 / (shape_param1 + shape_param2)^2 / 
     (shape_param1 + shape_param2 + 1)
@@ -84,7 +84,7 @@ onestep_estimator <- function(df){
     # estimate E[E[Y|A = 0, M, W]|A=1, W]] on A=1 subset
     # then predict on the whole data set
     sub_df <- df[df$a == 1, ]
-    reg_task2 <- sl3_Task$new(data = df, covariates = 'w', outcome = 'mu_hat')
+    reg_task2 <- sl3_Task$new(data = sub_df, covariates = 'w', outcome = 'mu_hat')
     model2 <- hal$train(reg_task2)
     reg_task2_pre <- sl3_Task$new(data = df, covariates = 'w')
     df$theta_hat <- model2$predict(task = reg_task2_pre)
@@ -140,8 +140,8 @@ onestep_estimator <- function(df){
 # comparison
 est_sl <- NULL
 est_csl <- NULL
-for (i in c(1:1)){
-    data <- setdata(400)
+for (i in c(1:50)){
+    data <- setdata(200)
     results <- onestep_estimator(data)
     est_sl <- c(est_sl, results[1])
     est_csl <- c(est_csl, results[2])
