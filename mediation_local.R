@@ -13,7 +13,7 @@ library(msm)
 setdata <- function(n){
     w <- rtnorm(n, mean = 5, sd = 0.5, lower = 2, upper = 8)
     a <- rbinom(n, 1, 0.4 - 0.15*I(w>7.5) + 0.25*I(w<6) - 0.35*I(w<4))
-    m <- (a == 1) * rbeta(n,  w, w + 2) + (a == 0) * rbeta(n, 2 + w, w)
+    m <- (a == 1) * rbeta(n,  0.6 * w + 1, 0.7 * w) + (a == 0) * rtnorm(n, 0.1 * w, 0.25, lower = 0, upper = 1)
     y <- rnorm(n, 5 + 1.5 * a + 2 * m + 5 * m^2 + 0.3 * w, sd = 2)
     df <- data.frame(w = w, a = a, m = m, y = y)
 }
@@ -22,8 +22,8 @@ setdata <- function(n){
 true_val_data <- setdata(10000000)
 # E[E(Y|A=0, M, W)|A=1, W]]
 # 5 + 2E(M|A=1, W) + 5E(M^2|A=1, W) + 0.3W
-shape_param1 <-  true_val_data$w
-shape_param2 <- 2 + true_val_data$w
+shape_param1 <-  0.6 * true_val_data$w + 1
+shape_param2 <- 0.7 * true_val_data$w
 moment1 <- shape_param1 / (shape_param1 + shape_param2)
 moment2 <- moment1^2 + shape_param1 * shape_param2 / (shape_param1 + shape_param2)^2 / 
     (shape_param1 + shape_param2 + 1)
@@ -33,24 +33,24 @@ true_value <- mean(intermediate)
 
 
 
-# define classification super learners
+# define classification learners
 cl1 <- Lrnr_bayesglm$new()
 cl2 <- Lrnr_glm$new()
 cl3 <- Lrnr_hal9001$new()
 cl4 <- Lrnr_gam$new()
 cl5 <- Lrnr_xgboost$new()
 
-# define learners
-lr1 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 200, alpha = 0.8, name = 'lr2'), 
+# define ratio learners
+lr1 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 200, alpha = 0.8, name = 'lr1'), 
                     Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 200, alpha = 0.8, name = '', stage2 = TRUE))
-lr2 <- Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 200, 
-                                 fold_num = 8, name = 'lr3')
-lr3 <- Pipeline$new(Lrnr_densratio_classification$new(name = 'lr4'), 
-                    Lrnr_densratio_classification$new(stage2 = TRUE, name = ''))
-lr4 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_bayesglm), name = 'lr5'), 
+lr2 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 200, alpha = 0.2, name = 'lr2'), 
+                    Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 200, alpha = 0.5, name = '', stage2 = TRUE))
+lr3 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_gam), name = 'lr3'), 
+                    Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_gam), stage2 = TRUE, name = ''))
+lr4 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_bayesglm), name = 'lr4'), 
                     Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_bayesglm), stage2 = TRUE, name = ''))
-lr5 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_hal9001), name = 'lr6'), 
-                    Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_hal9001), stage2 = TRUE, name = ''))
+lr5 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_hal9001), name = 'lr5'), 
+                 Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_hal9001), stage2 = TRUE, name = ''))
 
 # stack the learners into a super learner
 stack_cl <- Stack$new(cl1, cl2, cl3, cl4, cl5)
@@ -59,7 +59,7 @@ csl <- Lrnr_sl$new(stack_cl, metalearner = Lrnr_solnp$new(
 
 
 # stack the learners into a super learner
-stack <- Stack$new(lr1, lr2, lr3, lr4, lr5, lr6) 
+stack <- Stack$new(lr1, lr2, lr3, lr4, lr5) 
 sl <- Lrnr_sl$new(stack, metalearner = Lrnr_solnp$new(
     eval_function = loss_weighted_loglik_densratio ))
 
@@ -109,8 +109,8 @@ onestep_estimator <- function(df){
     df$m_sdd <- df$m / sd_m
     df$w_sdd <- df$w / sd_w
     # define the tasks
-    task1 <- sl3_Task$new(data = df, covariates = c('m_sdd', 'w_sdd'), outcome = 'indicator', folds = 3)
-    task2 <- sl3_Task$new(data = df, covariates = c('w_sdd'), outcome = 'indicator', folds = 3)
+    task1 <- sl3_Task$new(data = df, covariates = c('m_sdd', 'w_sdd'), outcome = 'indicator', folds = 5)
+    task2 <- sl3_Task$new(data = df, covariates = c('w_sdd'), outcome = 'indicator', folds = 5)
     # train the super learners
     csl1_fit <- csl$train(task1)
     csl2_fit <- csl$train(task2)
@@ -140,7 +140,7 @@ onestep_estimator <- function(df){
 # comparison
 est_sl <- NULL
 est_csl <- NULL
-for (i in c(1:50)){
+for (i in c(1:10)){
     data <- setdata(200)
     results <- onestep_estimator(data)
     est_sl <- c(est_sl, results[1])
