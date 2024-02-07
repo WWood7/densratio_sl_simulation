@@ -7,26 +7,29 @@ devtools::load_all()
 # define a function to set the data
 # w = |w1| + w2 where w1 ~ N(0,4), w2 ~ Gamma(7.5, 1)
 # a|w ~ Bernoulli(0.4 - 0.15I(w>7.5) + 0.15I(w>9) + 0.25I(w<6) - 0.1I(w<3))
-# m|w,a ~ Beta(0.5w + a, 0.8w)
-# y|a, m, w ~ N(5 + 1.5A + 2M + 0.3W, 4)
+# m|w,a=1 ~ Beta(0.5w, 0.8w)
+# m|w,a=0 ~ Beta(0.8w, 0.5w)
+# y|a, m, w ~ N(5 + 1.5a + 2m + 5m^2 + 0.3w, 4)
 setdata <- function(n){
     w <- abs(rnorm(n, 0, 2)) + rgamma(n, shape = 7.5, scale = 1)
     a <- rbinom(n, 1, 0.4 - 0.15*I(w>7.5) + 0.15*I(w>9) + 0.25*I(w<6) - 0.1*I(w<3))
-    m <- rbeta(n, 0.5 * w + a, 0.8 * w)
-    y <- rnorm(n, 5 + 1.5 * a + 2 * m + 0.3 * w, sd = 2)
+    m <- (a == 1) * rbeta(n, 0.5 * w, 0.8 * w) + (a == 0) * rbeta(n, 0.8 * w, 0.5 * w)
+    y <- rnorm(n, 5 + 1.5 * a + 2 * m + 5 * m^2 + 0.3 * w, sd = 2)
     df <- data.frame(w = w, a = a, m = m, y = y)
 }
 
 # calculate the true value of the target parameter
-true_val_data <- setdata(1000000)
+true_val_data <- setdata(10000000)
 # E[E(Y|A=0, M, W)|A=1, W]]
-# 5 + 2 * E(M|A=1, W) + 0.3*W
-intermediate <- 5 + 
-    2 * (0.5 * true_val_data$w + 1) / (0.5 * true_val_data$w + 1 + 0.8 * true_val_data$w) + 
-    0.3 * true_val_data$w
+# 5 + 2E(M|A=1, W) + 5E(M^2|A=1, W) + 0.3W
+shape_param1 <- 0.5 * true_val_data$w
+shape_param2 <- 0.8 * true_val_data$w
+moment1 <- shape_param1 / (shape_param1 + shape_param2)
+moment2 <- moment1^2 + shape_param1 * shape_param2 / (shape_param1 + shape_param2)^2 / 
+    (shape_param1 + shape_param2 + 1)
+intermediate <- 5 + 2 * moment1 + 5 * moment2 + 0.3 * true_val_data$w
 # E[E[E(Y|A=0, M, W)|A=1, W]]]
 true_value <- mean(intermediate)
-
 
 
 
@@ -38,18 +41,16 @@ cl4 <- Lrnr_gam$new()
 cl5 <- Lrnr_xgboost$new()
 
 # define learners
-lr1 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.5, name = 'lr1'), 
-                    Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.5, name = '', stage2 = TRUE))
-lr2 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.8, name = 'lr2'), 
-                    Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 100, alpha = 0.8, name = '', stage2 = TRUE))
-lr3 <- Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 200, 
+lr1 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 200, alpha = 0.8, name = 'lr2'), 
+                    Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 200, alpha = 0.8, name = '', stage2 = TRUE))
+lr2 <- Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 200, 
                                  fold_num = 8, name = 'lr3')
-lr4 <- Pipeline$new(Lrnr_densratio_classification$new(name = 'lr4'), 
+lr3 <- Pipeline$new(Lrnr_densratio_classification$new(name = 'lr4'), 
                     Lrnr_densratio_classification$new(stage2 = TRUE, name = ''))
-lr5 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_bayesglm), name = 'lr5'), 
+lr4 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_bayesglm), name = 'lr5'), 
                     Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_bayesglm), stage2 = TRUE, name = ''))
-lr6 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_hal9001), name = 'lr6'), 
-                    Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_glm), stage2 = TRUE, name = ''))
+lr5 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_hal9001), name = 'lr6'), 
+                    Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_hal9001), stage2 = TRUE, name = ''))
 
 # stack the learners into a super learner
 stack_cl <- Stack$new(cl1, cl2, cl3, cl4, cl5)
@@ -69,26 +70,35 @@ sl <- Lrnr_sl$new(stack, metalearner = Lrnr_solnp$new(
 onestep_estimator <- function(df){
     
     # sequential regression
+    # use HAL to run regressions
+    hal <- Lrnr_hal9001$new()
     
     # estimate E[Y|A, M, W] and get E[Y|A = 0, M, W]
-    model1 <- lm(y ~ a + m + w, data = df)
+    reg_task1 <- sl3_Task$new(data = df, covariates = c('a', 'm', 'w'), outcome = 'y')
+    model1 <- hal$train(reg_task1)
     new_df1 <- df
     new_df1$a <- 0
-    df$mu_hat <- predict(model1, newdata = new_df1)
+    reg_task1_pre <- sl3_Task$new(data = new_df1, covariates = c('a', 'm', 'w'))
+    df$mu_hat <- model1$predict(task = reg_task1_pre)
     
     # estimate E[E[Y|A = 0, M, W]|A=1, W]] on A=1 subset
     # then predict on the whole data set
     sub_df <- df[df$a == 1, ]
-    model2 <- lm(mu_hat ~ w, data = sub_df)
-    df$theta_hat <- predict(model2, newdata = df)
+    reg_task2 <- sl3_Task$new(data = df, covariates = 'w', outcome = 'mu_hat')
+    model2 <- hal$train(reg_task2)
+    reg_task2_pre <- sl3_Task$new(data = df, covariates = 'w')
+    df$theta_hat <- model2$predict(task = reg_task2_pre)
     
-    # get theta_bar
+    # get theta_bar, the plug-in estimate
     # E[E[E[Y|A = 0, M, W]|A=1, W]]]
     df$theta_bar <- mean(df$theta_hat)
     
+    
+    # calculate the bias correction terms
     # estimate propensity scores p(A|W)
-    model3 <- glm(a ~ w, family = binomial, data = df)
-    df$ps1 <- predict(model3, newdata = df, type = 'response')
+    ps_task <- sl3_Task$new(data = df, covariates = 'w', outcome = 'a')
+    model3 <- hal$train(ps_task)
+    df$ps1 <- model3$predict()
     df$ps0 <- 1 - df$ps1
     
     # estimate the density ratios
@@ -101,7 +111,6 @@ onestep_estimator <- function(df){
     # define the tasks
     task1 <- sl3_Task$new(data = df, covariates = c('m_sdd', 'w_sdd'), outcome = 'indicator', folds = 3)
     task2 <- sl3_Task$new(data = df, covariates = c('w_sdd'), outcome = 'indicator', folds = 3)
-    
     # train the super learners
     csl1_fit <- csl$train(task1)
     csl2_fit <- csl$train(task2)
@@ -114,12 +123,13 @@ onestep_estimator <- function(df){
     df$ratio_csl <- csl_pres
     df$ratio_sl <- sl_pres
     
-    # get the bias correction terms
+    # get the final bias correction terms
     df$bias_sl <- as.numeric(df$a == 0) / df$ps0 * df$ratio_sl * (df$y - df$mu_hat) +
         as.numeric(df$a == 1) / df$ps1 * (df$mu_hat - df$theta_hat) + df$theta_hat - df$theta_bar
     df$bias_csl <- as.numeric(df$a == 0) / df$ps0 * df$ratio_csl * (df$y - df$mu_hat) +
         as.numeric(df$a == 1) / df$ps1 * (df$mu_hat - df$theta_hat) + df$theta_hat - df$theta_bar
     
+    # get the final one-step estimates
     est_sl <- mean(df$bias_sl) + mean(df$theta_hat)
     est_csl <- mean(df$bias_csl) + mean(df$theta_hat)
     return(c(est_sl, est_csl))
@@ -130,8 +140,8 @@ onestep_estimator <- function(df){
 # comparison
 est_sl <- NULL
 est_csl <- NULL
-for (i in c(1:10)){
-    data <- setdata(500)
+for (i in c(1:1)){
+    data <- setdata(400)
     results <- onestep_estimator(data)
     est_sl <- c(est_sl, results[1])
     est_csl <- c(est_csl, results[2])
