@@ -70,16 +70,14 @@ sl <- Lrnr_sl$new(stack, metalearner = Lrnr_solnp$new(
 onestep_estimator <- function(df){
     
     # sequential regression
-    # use HAL to run regressions
+    # use HAL to run sequential regressions
     hal <- Lrnr_hal9001$new()
     
     # estimate E[Y|A, M, W] and get E[Y|A = 0, M, W]
-    reg_task1 <- sl3_Task$new(data = df, covariates = c('a', 'm', 'w'), outcome = 'y')
-    model1 <- hal$train(reg_task1)
+    model1 <- lm(y ~ a + m + w, data = df)
     new_df1 <- df
     new_df1$a <- 0
-    reg_task1_pre <- sl3_Task$new(data = new_df1, covariates = c('a', 'm', 'w'))
-    df$mu_hat <- model1$predict(task = reg_task1_pre)
+    df$mu_hat <- predict(model1, newdata = new_df1)
     
     # estimate E[E[Y|A = 0, M, W]|A=1, W]] on A=1 subset
     # then predict on the whole data set
@@ -146,6 +144,7 @@ for (i in c(1:20)){
     est_sl <- c(est_sl, results[1])
     est_csl <- c(est_csl, results[2])
 }
+
 
 
 
