@@ -149,7 +149,7 @@ results <- onestep_estimator(data)
 # store the results
 setwd('/projects/dbenkes/winn/mediation1')
 filename = paste0("result_seed", seed, "_n", n, "_", ".rds")
-saveRDS(risk_table, file = filename)
+saveRDS(results, file = filename)
 
 
 
