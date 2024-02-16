@@ -5,16 +5,19 @@ devtools::load_all()
 library(msm)
 
 # define a function to set the data
-# w = |w1| + w2 where w1 ~ N(0,4), w2 ~ Gamma(7.5, 1)
-# a|w ~ Bernoulli(0.4 - 0.15I(w>7.5) + 0.15I(w>9) + 0.25I(w<6) - 0.1I(w<3))
-# m|w,a=1 ~ Beta(0.5w, 0.8w)
-# m|w,a=0 ~ Beta(0.8w, 0.5w)
-# y|a, m, w ~ N(5 + 1.5a + 2m + 5m^2 + 0.3w, 4)
+# n as sample size
+# w = |x1| + x2 where x1 ~ N(0,4), x2 ~ Gamma(7.5, 1)
+# a|w ~ bernoulli(0.4 + 0.15I(w>7.5) + 0.05I(w<6) + 0.1I(w<3)
+# m|a=1,w ~ Gamma(0.3w, a + 1)
+# m|a=0,w ~ |N(0.2w, 4)|
+# y|a, m, w ~ N(5 + 5a + 2m + 0.5m^2 + 1.2w, 4)
+# estimate p(m|w,a=1) / p(m|w,a=0)
 setdata <- function(n){
-    w <- rtnorm(n, mean = 5, sd = 0.5, lower = 2, upper = 8)
-    a <- rbinom(n, 1, 0.4 - 0.15*I(w>7.5) + 0.25*I(w<6) - 0.35*I(w<4))
-    m <- (a == 1) * rbeta(n,  0.6 * w + 1, 0.7 * w) + (a == 0) * rtnorm(n, 0.1 * w, 0.25, lower = 0, upper = 1)
-    y <- rnorm(n, 5 + 1.5 * a + 2 * m + 5 * m^2 + 0.3 * w, sd = 2)
+    w <- abs(rnorm(n, 0, 2)) + rgamma(n, shape = 7.5, scale = 1)
+    a <- rbinom(n, 1, 0.4 + 0.15*I(w>7.5) + 0.05*I(w<6) + 0.1*I(w<3))
+    m <- I(a==0) * abs(rnorm(n, 0.2 * w , 2)) + 
+        I(a==1) * rgamma(n, shape = 0.3 * w, scale = 2)
+    y <- rnorm(n, 5 + 5 * a + 2 * m + 0.5 * m^2 + 1.2 * w, 2)
     df <- data.frame(w = w, a = a, m = m, y = y)
 }
 
@@ -22,12 +25,11 @@ setdata <- function(n){
 true_val_data <- setdata(10000000)
 # E[E(Y|A=0, M, W)|A=1, W]]
 # 5 + 2E(M|A=1, W) + 5E(M^2|A=1, W) + 0.3W
-shape_param1 <-  0.6 * true_val_data$w + 1
-shape_param2 <- 0.7 * true_val_data$w
-moment1 <- shape_param1 / (shape_param1 + shape_param2)
-moment2 <- moment1^2 + shape_param1 * shape_param2 / (shape_param1 + shape_param2)^2 / 
-    (shape_param1 + shape_param2 + 1)
-intermediate <- 5 + 2 * moment1 + 5 * moment2 + 0.3 * true_val_data$w
+shape_param <-  0.3 * true_val_data$w
+scale_param <- 2
+moment1 <- shape_param * scale_param
+moment2 <- moment1^2 + shape_param * scale_param^2
+intermediate <- 5 + 2 * moment1 + 0.5 * moment2 + 1.2 * true_val_data$w
 # E[E[E(Y|A=0, M, W)|A=1, W]]]
 true_value <- mean(intermediate)
 
