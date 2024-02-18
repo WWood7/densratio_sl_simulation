@@ -141,8 +141,8 @@ onestep_estimator <- function(df){
 # comparison
 est_sl <- NULL
 est_csl <- NULL
-for (i in c(1:20)){
-    data <- setdata(200)
+for (i in c(1:100)){
+    data <- setdata(100)
     results <- onestep_estimator(data)
     est_sl <- c(est_sl, results[1])
     est_csl <- c(est_csl, results[2])

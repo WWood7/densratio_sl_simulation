@@ -20,7 +20,7 @@ setdata <- function(n){
 
 # define a grid of parameters for the simulation
 # 10 replicates at each sample size in each setting
-params = expand.grid(seed = 1:100,
+params = expand.grid(seed = 101:200,
                      n = c(100, 500, 1000, 2000))
 
 
