@@ -1,6 +1,6 @@
-setwd("/Users/winnwu/Documents/GitHub/sl3_densratio")
+setwd("/home/wwu227/my_packages/sl3_densratio")
 devtools::load_all()
-setwd("/Users/winnwu/Documents/GitHub/densratio")
+setwd("/home/wwu227/my_packages/densratio")
 devtools::load_all()
 library(msm)
 
@@ -18,19 +18,10 @@ setdata <- function(n){
     df <- data.frame(w = w, a = a, m = m, y = y)
 }
 
-# calculate the true value of the target parameter
-true_val_data <- setdata(10000000)
-# E[E(Y|A=0, M, W)|A=1, W]]
-# 5 + 2E(M|A=1, W) + 5E(M^2|A=1, W) + 0.3W
-shape_param1 <-  0.6 * true_val_data$w + 1
-shape_param2 <- 0.7 * true_val_data$w
-moment1 <- shape_param1 / (shape_param1 + shape_param2)
-moment2 <- moment1^2 + shape_param1 * shape_param2 / (shape_param1 + shape_param2)^2 / 
-    (shape_param1 + shape_param2 + 1)
-intermediate <- 5 + 2 * moment1 + 5 * moment2 + 0.3 * true_val_data$w
-# E[E[E(Y|A=0, M, W)|A=1, W]]]
-true_value <- mean(intermediate)
-
+# define a grid of parameters for the simulation
+# 10 replicates at each sample size in each setting
+params = expand.grid(seed = 1:100,
+                     n = c(100, 500, 1000, 2000))
 
 
 # define classification learners
@@ -59,6 +50,7 @@ lr4 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = csl, name = '
 stack <- Stack$new(lr1, lr2, lr3, lr4) 
 sl <- Lrnr_sl$new(stack, metalearner = Lrnr_solnp$new(
     eval_function = loss_weighted_loglik_densratio ))
+
 
 
 
@@ -93,8 +85,9 @@ onestep_estimator <- function(df){
     
     # calculate the bias correction terms
     # estimate propensity scores p(A|W)
-    model3 <- glm(a ~ w, family = binomial(), data = df)
-    df$ps1 <- predict(model3, newdata = df, type = 'response')
+    ps_task <- sl3_Task$new(data = df, covariates = 'w', outcome = 'a')
+    model3 <- hal$train(ps_task)
+    df$ps1 <- model3$predict()
     df$ps0 <- 1 - df$ps1
     
     # estimate the density ratios
@@ -106,19 +99,16 @@ onestep_estimator <- function(df){
     df$w_sdd <- df$w / sd_w
     # define the tasks
     task1 <- sl3_Task$new(data = df, covariates = c('m_sdd', 'w_sdd'), outcome = 'indicator', folds = 5)
-    task2 <- sl3_Task$new(data = df, covariates = c('w_sdd'), outcome = 'indicator', folds = 5)
     # train the super learners
     csl1_fit <- csl$train(task1)
-    csl2_fit <- csl$train(task2)
     sl_fit <- sl$train(task1)
     
     # get the predictions of p(m|a=1,w) / p(m|a=0, w)
     csl_pres <- (csl1_fit$predict() / (1 - csl1_fit$predict())) /
-        (csl2_fit$predict() / (1 - csl2_fit$predict()))
+        (df$ps1 / df$ps0)
     sl_pres <- sl_fit$predict()
     df$ratio_csl <- csl_pres
     df$ratio_sl <- sl_pres
-    df$true_ratio <- dbeta(df$m, 0.6 * df$w, 0.7 * df$w) / dtnorm(df$m, 0.1 * df$w, 0.25, lower = 0, upper = 1)
     
     # get the final bias correction terms
     df$bias_sl <- as.numeric(df$a == 0) / df$ps0 * df$ratio_sl * (df$y - df$mu_hat) +
@@ -132,19 +122,29 @@ onestep_estimator <- function(df){
     return(c(est_sl, est_csl))
 }
 
+# import environment parameter
+# get iter from array
+iter = Sys.getenv("SLURM_ARRAY_TASK_ID")
+iter = as.numeric(iter)
+# get nloop
+args = commandArgs(trailingOnly = TRUE)
+nloop = as.numeric(args[1])
+# get task id
+max_jobs = 100
+task_id = max_jobs*(nloop-1) + iter
+seed = as.numeric(params[task_id,][1])
+n = as.numeric(params[task_id,][2])
+set.seed(seed)
 
 
-# comparison
-est_sl <- NULL
-est_csl <- NULL
-for (i in c(1:100)){
-    data <- setdata(100)
-    results <- onestep_estimator(data)
-    est_sl <- c(est_sl, results[1])
-    est_csl <- c(est_csl, results[2])
-}
+# generate a data
+data <- setdata(n)
+results <- c(onestep_estimator(data))
 
-
+# store the results
+setwd('/projects/dbenkes/winn/mediation2')
+filename = paste0("result_seed", seed, "_n", n, "_", ".rds")
+saveRDS(results, file = filename)
 
 
 
