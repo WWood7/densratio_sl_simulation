@@ -20,8 +20,8 @@ setdata <- function(n){
 
 # define a grid of parameters for the simulation
 # 10 replicates at each sample size in each setting
-params = expand.grid(seed = 101:200,
-                     n = c(100, 500, 1000, 2000))
+samplesize <- c(500, 1000, 1000, 2000)
+seedlist <- c(40, 122, 139, 121)
 
 
 
@@ -114,6 +114,8 @@ onestep_estimator <- function(df){
     sl_pres <- sl_fit$predict()
     df$ratio_csl <- csl_pres
     df$ratio_sl <- sl_pres
+    # get true ratio
+    df$true_ratio <- dbeta(df$m, 0.6 * df$w, 0.7 * df$w) / dtnorm(df$m, 0.1 * df$w, 0.25, lower = 0, upper = 1)
     
     # get the final bias correction terms
     df$bias_sl <- as.numeric(df$a == 0) / df$ps0 * df$ratio_sl * (df$y - df$mu_hat) +
@@ -122,34 +124,26 @@ onestep_estimator <- function(df){
         as.numeric(df$a == 1) / df$ps1 * (df$mu_hat - df$theta_hat) + df$theta_hat - df$theta_bar
     
     # get the final one-step estimates
-    est_sl <- mean(df$bias_sl) + mean(df$theta_hat)
-    est_csl <- mean(df$bias_csl) + mean(df$theta_hat)
-    return(c(est_sl, est_csl))
+    # est_sl <- mean(df$bias_sl) + mean(df$theta_hat)
+    # est_csl <- mean(df$bias_csl) + mean(df$theta_hat)
+    # return(c(est_sl, est_csl))
+    return(df)
 }
 
-# import environment parameter
-# get iter from array
-iter = Sys.getenv("SLURM_ARRAY_TASK_ID")
-iter = as.numeric(iter)
-# get nloop
-args = commandArgs(trailingOnly = TRUE)
-nloop = as.numeric(args[1])
-# get task id
-max_jobs = 100
-task_id = max_jobs*(nloop-1) + iter
-seed = as.numeric(params[task_id,][1])
-n = as.numeric(params[task_id,][2])
-set.seed(seed)
 
-
+df_list <- list()
 # generate a data
-data <- setdata(n)
-results <- c(onestep_estimator(data), seed)
+for (i in 1:4){
+    set.seed(seedlist[i])
+    df <- setdata(samplesize[i])
+    df_list[[i]] <- onestep_estimator(df)
+}
+
 
 # store the results
-setwd('/projects/dbenkes/winn/mediation1')
-filename = paste0("result_seed", seed, "_n", n, "_", ".rds")
-saveRDS(results, file = filename)
+setwd('/home/wwu227/thesis/mediation1_diagnostic')
+filename = "df_list.rds"
+saveRDS(df_list, file = filename)
 
 
 
