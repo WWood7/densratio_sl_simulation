@@ -20,8 +20,8 @@ setdata <- function(n){
 
 # define a grid of parameters for the simulation
 # 10 replicates at each sample size in each setting
-params = expand.grid(seed = 1:100,
-                     n = c(100, 500, 1000, 2000))
+params = expand.grid(seed = 1:20,
+                     n = c(500))
 
 
 # define classification learners
@@ -141,7 +141,7 @@ data <- setdata(n)
 results <- c(onestep_estimator(data))
 
 # store the results
-setwd('/projects/dbenkes/winn/mediation2')
+setwd('/projects/dbenkes/winn/mediation_mini/2')
 filename = paste0("result_seed", seed, "_n", n, "_", ".rds")
 saveRDS(results, file = filename)
 

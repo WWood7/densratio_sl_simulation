@@ -20,8 +20,8 @@ setdata <- function(n){
 
 # define a grid of parameters for the simulation
 # 10 replicates at each sample size in each setting
-params = expand.grid(seed = 1:100,
-                     n = c(100, 500, 1000, 2000))
+params = expand.grid(seed = 1:20,
+                     n = c(500))
 
 
 # define classification learners
@@ -63,12 +63,10 @@ onestep_estimator <- function(df){
     hal <- Lrnr_hal9001$new()
     
     # estimate E[Y|A, M, W] and get E[Y|A = 0, M, W]
-    reg_task1 <- sl3_Task$new(data = df, covariates = c('a', 'm', 'w'), outcome = 'y')
-    model1 <- hal$train(reg_task1)
+    model1 <- lm(y ~ a + m + w, data = df)
     new_df1 <- df
     new_df1$a <- 0
-    reg_task1_pre <- sl3_Task$new(data = new_df1, covariates = c('a', 'm', 'w'))
-    df$mu_hat <- model1$predict(task = reg_task1_pre)
+    df$mu_hat <- predict(model1, newdata = new_df1)
     
     # estimate E[E[Y|A = 0, M, W]|A=1, W]] on A=1 subset
     # then predict on the whole data set
@@ -85,8 +83,9 @@ onestep_estimator <- function(df){
     
     # calculate the bias correction terms
     # estimate propensity scores p(A|W)
-    model3 <- glm(a ~ w, data = df, family = binomial())
-    df$ps1 <- predict(model3, newdata = df)
+    ps_task <- sl3_Task$new(data = df, covariates = 'w', outcome = 'a')
+    model3 <- hal$train(ps_task)
+    df$ps1 <- model3$predict()
     df$ps0 <- 1 - df$ps1
     
     # estimate the density ratios
@@ -141,7 +140,7 @@ data <- setdata(n)
 results <- c(onestep_estimator(data))
 
 # store the results
-setwd('/projects/dbenkes/winn/mediation2')
+setwd('/projects/dbenkes/winn/mediation_mini/3')
 filename = paste0("result_seed", seed, "_n", n, "_", ".rds")
 saveRDS(results, file = filename)
 
