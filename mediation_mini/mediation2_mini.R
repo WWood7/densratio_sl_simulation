@@ -43,7 +43,7 @@ lr2 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 200
 lr3 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 200, name = 'lr3'), 
                     Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 200, name = '', stage2 = TRUE))
 lr4 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = csl, name = 'lr4'), 
-                    Lrnr_densratio_classification$new(classifier = csl, stage2 = TRUE, name = ''))
+                    Lrnr_densratio_classification$new(classifier = make_learner(Lrnr_glm), stage2 = TRUE, name = ''))
 
 
 # stack the learners into a super learner

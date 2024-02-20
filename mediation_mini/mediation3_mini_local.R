@@ -1,6 +1,6 @@
-setwd("/home/wwu227/my_packages/sl3_densratio")
+setwd("/Users/winnwu/Documents/GitHub/sl3_densratio")
 devtools::load_all()
-setwd("/home/wwu227/my_packages/densratio")
+setwd("/Users/winnwu/Documents/GitHub/densratio")
 devtools::load_all()
 library(msm)
 
@@ -63,7 +63,7 @@ onestep_estimator <- function(df){
     hal <- Lrnr_hal9001$new()
     
     # estimate E[Y|A, M, W] and get E[Y|A = 0, M, W]
-    model1 <- lm(y ~ a + m, data = df)
+    model1 <- lm(y ~ a + w, data = df)
     new_df1 <- df
     new_df1$a <- 0
     df$mu_hat <- predict(model1, newdata = new_df1)
