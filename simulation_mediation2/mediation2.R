@@ -42,8 +42,9 @@ lr2 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 200
                     Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 200, alpha = 0.5, name = '', stage2 = TRUE))
 lr3 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 200, name = 'lr3'), 
                     Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 200, name = '', stage2 = TRUE))
-lr4 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = csl, name = 'lr4'), 
-                    Lrnr_densratio_classification$new(classifier = csl, stage2 = TRUE, name = ''))
+# use Lrnr_glm for the second stage classification
+lr4 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = csl, name = 'csl'), 
+                    Lrnr_densratio_classification$new(classifier = cl2, stage2 = TRUE, name = ''))
 
 
 # stack the learners into a super learner
@@ -85,8 +86,9 @@ onestep_estimator <- function(df){
     
     # calculate the bias correction terms
     # estimate propensity scores p(A|W)
-    model3 <- glm(a ~ w, data = df, family = binomial())
-    df$ps1 <- predict(model3, newdata = df)
+    ps_task <- sl3_Task$new(data = df, covariates = 'w', outcome = 'a')
+    model3 <- cl2$train(ps_task)
+    df$ps1 <- model3$predict()
     df$ps0 <- 1 - df$ps1
     
     # estimate the density ratios
