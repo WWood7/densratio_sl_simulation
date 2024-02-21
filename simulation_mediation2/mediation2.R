@@ -5,15 +5,15 @@ devtools::load_all()
 library(msm)
 
 # define a function to set the data
-# w = |w1| + w2 where w1 ~ N(0,4), w2 ~ Gamma(7.5, 1)
-# a|w ~ Bernoulli(0.4 - 0.15I(w>7.5) + 0.15I(w>9) + 0.25I(w<6) - 0.1I(w<3))
-# m|w,a=1 ~ Beta(0.5w, 0.8w)
-# m|w,a=0 ~ Beta(0.8w, 0.5w)
+# w ~ N(5, 4), truncated into [2, 8]
+# a|w ~ Bernoulli(0.6 - 0.15I(w>7.5) + 0.05I(w<6) - 0.35I(w<4) - 0.15I(w>5))
+# m|w,a=1 ~ Beta(0.6w + 1, 0.7w)
+# m|w,a=0 ~ N(0.1w, 1), truncated into [0, 1]
 # y|a, m, w ~ N(5 + 1.5a + 2m + 5m^2 + 0.3w, 4)
 setdata <- function(n){
-    w <- rtnorm(n, mean = 5, sd = 0.5, lower = 2, upper = 8)
-    a <- rbinom(n, 1, 0.4 - 0.15*I(w>7.5) + 0.25*I(w<6) - 0.35*I(w<4))
-    m <- (a == 1) * rbeta(n,  0.6 * w + 1, 0.7 * w) + (a == 0) * rtnorm(n, 0.1 * w, 0.25, lower = 0, upper = 1)
+    w <- rtnorm(n, mean = 5, sd = 2, lower = 2, upper = 8)
+    a <- rbinom(n, 1, 0.6 - 0.15*I(w>7) + 0.05*I(w<6) - 0.35*I(w<4) - 0.15*I(w>5))
+    m <- (a == 1) * rbeta(n,  0.6 * w + 1, 0.7 * w) + (a == 0) * rtnorm(n, 0.1 * w, 1, lower = 0, upper = 1)
     y <- rnorm(n, 5 + 1.5 * a + 2 * m + 5 * m^2 + 0.3 * w, sd = 2)
     df <- data.frame(w = w, a = a, m = m, y = y)
 }
@@ -86,6 +86,7 @@ onestep_estimator <- function(df){
     
     # calculate the bias correction terms
     # estimate propensity scores p(A|W)
+    # cl2 is a Lrnr_glm
     ps_task <- sl3_Task$new(data = df, covariates = 'w', outcome = 'a')
     model3 <- cl2$train(ps_task)
     df$ps1 <- model3$predict()
@@ -110,6 +111,7 @@ onestep_estimator <- function(df){
     sl_pres <- sl_fit$predict()
     df$ratio_csl <- csl_pres
     df$ratio_sl <- sl_pres
+    df$true_ratio <- dbeta(df$m, 0.6 *df$w + 1, 0.7 *df$w) / dtnorm(df$m, 0.1 * df$w, 1, lower = 0, upper = 1)
     
     # get the final bias correction terms
     df$bias_sl <- as.numeric(df$a == 0) / df$ps0 * df$ratio_sl * (df$y - df$mu_hat) +
