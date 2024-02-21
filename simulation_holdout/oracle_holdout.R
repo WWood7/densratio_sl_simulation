@@ -36,7 +36,7 @@ holdout_risk <- function(lr, df){
 # define a grid of parameters for the simulation
 # 10 replicates at each sample size in each setting
 params = expand.grid(seed = 1:100,
-                    n = c(100, 500, 1000, 2000))
+                    n = c(100, 500, 1000, 2000, 5000))
 
 
 # define classification learners

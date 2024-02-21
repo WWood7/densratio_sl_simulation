@@ -8,7 +8,7 @@ myscratch="/home/wwu227/thesis/holdout/scratch"  # location of your persistent s
 resultdir="/home/wwu227/thesis/holdout/scratch/out"  # This is a folder in permanent storage
 script=$1      # your code as (R or Python) script (1st arg)
 max_jobs=100  # max number of jobs 10
-loops=4   # total number of jobs 2
+loops=5   # total number of jobs 2
 
 
 username=$(id -nu)

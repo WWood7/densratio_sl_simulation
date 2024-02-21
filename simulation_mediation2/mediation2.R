@@ -106,6 +106,7 @@ onestep_estimator <- function(df){
     sl_fit <- sl$train(task1)
     
     # get the predictions of p(m|a=1,w) / p(m|a=0, w)
+    # for the separate classification sl, manually calculate the 2 odds
     csl_pres <- (csl1_fit$predict() / (1 - csl1_fit$predict())) /
         (df$ps1 / df$ps0)
     sl_pres <- sl_fit$predict()

@@ -20,18 +20,18 @@ username=$(id -nu)
 
 # submit first batch of jobs
 for i in $(seq 1 ${loops}); do
-	echo "#!/bin/bash" > script$i.sh
-	echo "#SBATCH --array=1-$max_jobs" >> script$i.sh
-	echo "#SBATCH --partition=day-long-cpu" >> script$i.sh
-	echo "#SBATCH --error=${myscratch}/err/${analysis}$i.err" >> script$i.sh
-	echo "#SBATCH --output=${myscratch}/out/${analysis}$i.out" >> script$i.sh
+	echo "#!/bin/bash" > mediation$i.sh
+	echo "#SBATCH --array=1-$max_jobs" >> mediation$i.sh
+	echo "#SBATCH --partition=day-long-cpu" >> mediation$i.sh
+	echo "#SBATCH --error=${myscratch}/err/${analysis}$i.err" >> mediation$i.sh
+	echo "#SBATCH --output=${myscratch}/out/${analysis}$i.out" >> mediation$i.sh
 
-    echo "source ~/miniconda3/etc/profile.d/conda.sh" >> script$i.sh
-	echo "conda activate rproj" >> script$i.sh
+    echo "source ~/miniconda3/etc/profile.d/conda.sh" >> mediation$i.sh
+	echo "conda activate rproj" >> mediation$i.sh
 
-	echo "Rscript ${script} $i" >> script$i.sh
-    echo "#SBATCH --mail-user=$username$maildom" >> script$i.sh
-	echo "#SBATCH --mail-type=ALL" >> script$i.sh
+	echo "Rscript ${script} $i" >> mediation$i.sh
+    echo "#SBATCH --mail-user=$username$maildom" >> mediation$i.sh
+	echo "#SBATCH --mail-type=ALL" >> mediation$i.sh
 
-    sbatch script$i.sh
+    sbatch mediation$i.sh
 done
