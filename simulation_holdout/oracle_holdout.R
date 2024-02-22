@@ -38,35 +38,6 @@ holdout_risk <- function(lr, df){
 params = expand.grid(seed = 1:100,
                     n = c(100, 500, 1000, 2000, 5000))
 
-
-# define classification learners
-cl1 <- Lrnr_bayesglm$new()
-cl2 <- Lrnr_glm$new()
-cl3 <- Lrnr_hal9001$new()
-cl4 <- Lrnr_gam$new()
-cl5 <- Lrnr_xgboost$new()
-# stack the learners into a super learner
-stack_cl <- Stack$new(cl1, cl2, cl3, cl4, cl5)
-csl <- Lrnr_sl$new(stack_cl, metalearner = Lrnr_solnp$new(
-    eval_function = loss_loglik_binomial))
-
-# define ratio learners
-lr1 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 200, alpha = 0.8, name = 'lr1'), 
-                    Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 200, alpha = 0.8, name = '', stage2 = TRUE))
-lr2 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 200, name = 'lr2'), 
-                    Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = 200, alpha = 0.5, name = '', stage2 = TRUE))
-lr3 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 200, name = 'lr3'), 
-                    Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = 200, name = '', stage2 = TRUE))
-# use Lrnr_glm for the second stage classification
-lr4 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = csl, name = 'csl'), 
-                    Lrnr_densratio_classification$new(classifier = csl, stage2 = TRUE, name = ''))
-
-
-# stack the learners into a super learner
-stack <- Stack$new(lr1, lr2, lr3, lr4) 
-sl <- Lrnr_sl$new(stack, metalearner = Lrnr_solnp$new(
-    eval_function = loss_weighted_loglik_densratio ))
-
 # import environment parameter
 # get iter from array
 iter = Sys.getenv("SLURM_ARRAY_TASK_ID")
@@ -82,10 +53,38 @@ n = as.numeric(params[task_id,][2])
 set.seed(seed)
 
 
-
 # generate a data
 train <- setdata(n)
 train$indicator <- train$a
+
+# define classification learners
+cl1 <- Lrnr_bayesglm$new()
+cl2 <- Lrnr_glm$new()
+cl3 <- Lrnr_hal9001$new()
+cl4 <- Lrnr_gam$new()
+cl5 <- Lrnr_xgboost$new()
+# stack the learners into a super learner
+stack_cl <- Stack$new(cl1, cl2, cl3, cl4, cl5)
+csl <- Lrnr_sl$new(stack_cl, metalearner = Lrnr_solnp$new(
+    eval_function = loss_loglik_binomial))
+
+# define ratio learners
+lr1 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = n, alpha = 0.8, name = 'lr1'), 
+                    Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = n, alpha = 0.8, name = '', stage2 = TRUE))
+lr2 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = n, name = 'lr2'), 
+                    Lrnr_densratio_kernel$new(method = 'RuLSIF', kernel_num = n, alpha = 0.5, name = '', stage2 = TRUE))
+lr3 <- Pipeline$new(Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = n, name = 'lr3'), 
+                    Lrnr_densratio_kernel$new(method = 'KLIEP', kernel_num = n, name = '', stage2 = TRUE))
+# use Lrnr_glm for the second stage classification
+lr4 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = csl, name = 'csl'), 
+                    Lrnr_densratio_classification$new(classifier = csl, stage2 = TRUE, name = ''))
+
+
+# stack the learners into a super learner
+stack <- Stack$new(lr1, lr2, lr3, lr4) 
+sl <- Lrnr_sl$new(stack, metalearner = Lrnr_solnp$new(
+    eval_function = loss_weighted_loglik_densratio ))
+
 # normalize the data
 sd_m <- sd(train$m)
 sd_w <- sd(train$w)
@@ -95,6 +94,8 @@ train$w_sdd <- train$w / sd_w
 task <- sl3_Task$new(data = train, covariates = c('m_sdd', 'w_sdd'), outcome = 'indicator', folds = 5)
 # train the super learner
 sl_fit <- sl$train(task)
+
+
 # standardize test data using sd's from training set
 test$m_sdd <- test$m / sd_m
 test$w_sdd <- test$w / sd_w

@@ -50,7 +50,7 @@ ggplot(df, aes(x = sample_size, y = est_means, color = group, group = group)) +
     geom_ribbon(aes(ymin = est_means - est_sds, ymax = est_means + est_sds, fill = group), alpha = 0.2) +
     geom_line() +
     geom_point() + 
-    geom_hline(yintercept = 9.14, linetype = 'dashed', color = 'black', size = 1) +
+    geom_hline(yintercept = 9.1866, linetype = 'dashed', color = 'black', size = 1) +
     labs(title = "Means of estimates with SD Bands", x = "Sample Size", y = "Means of estimates") +
     theme_minimal() +
     scale_x_discrete(limits = c('n=100', 'n=500', 'n=1000', 'n=2000'), expand = c(0, 0))
