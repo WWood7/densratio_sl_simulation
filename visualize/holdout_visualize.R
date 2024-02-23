@@ -21,7 +21,30 @@ for (i in 1:5){
 }
 
 
-# draw the plots
+for (i in 1:5){
+    df <- data.frame()
+    for (j in 1:ncol(results[[i]])){
+        risk_mean <- rep(mean(results[[i]][, j]), nrow(results[[i]]))
+        new_df <- data.frame(risk = results[[i]][, j], mean_risk = risk_mean)
+        df <- rbind(df, new_df)
+    }
+    df$learner <- rep(c('super_learner', 'kernel_lr1', 'kernel_lr2', 'kernel_lr3', 'classification_sl'), 
+                           each = 100)
+    
+    # Add a helper column for sorting 'super_learner' first
+    df$learner_order <- ifelse(df$learner == 'super_learner', 1, 0)
+    # Now, order 'df' by mean_risk descending and then by learner_order
+    df <- df[order(-df$mean_risk, df$learner_order), ]
+    
+    df <- df[order(-df$mean_risk), ]
+    plot <- ggplot(df, aes(x=factor(learner, levels=unique(learner)), y=risk)) +
+        geom_point(aes(group=learner), position=position_jitter(width=0.1, height=0)) +
+        geom_point(aes(y=mean_risk, x=factor(learner, levels=unique(learner))), shape=3, size=3, color="red") +
+        theme_minimal() +
+        labs(y=paste0("hold out risk (n=", ssize_list[i],")"), x="Learners") +
+        coord_flip()
+    print(plot)
+}
 
 
 
