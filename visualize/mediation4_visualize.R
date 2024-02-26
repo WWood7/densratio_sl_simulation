@@ -2,11 +2,11 @@ library(ggplot2)
 library(reshape2)
 
 # Define the directory containing the .rds files
-directory <- '/Users/winnwu/projects/Benkeser_Lab/simulation_results/mediation3'
-ssize_list <- c(100, 500, 1000, 2000, 5000)
+directory <- '/Users/winnwu/projects/Benkeser_Lab/simulation_results/mediation4'
+ssize_list <- c(100, 200, 500)
 
 results <- list(NULL)
-for (i in 1:5){
+for (i in 1:3){
     # Create a list of .rds files
     pattern <- paste0(ssize_list[i], "_.rds$")
     file_list <- list.files(directory, pattern = pattern, full.names = TRUE)
@@ -25,17 +25,17 @@ means <- NULL
 sds <- NULL
 extreme_value_indicators <- NULL
 mse <- NULL
-for (i in 1:5){
+for (i in 1:3){
     # get the indicators
     extreme_value_indicators <- 
-        rbind(extreme_value_indicators, apply(abs(results[[i]]) > 12, 2, sum))
+        rbind(extreme_value_indicators, apply(abs(results[[i]]) > 20, 2, sum))
     # get the vectors with extreme values excluded
     sl <- results[[i]][, 1][(abs(results[[i]]) <= 12)[, 1]]
     csl <- results[[i]][, 2][(abs(results[[i]]) <= 12)[, 2]]
     # get the means
     means <- rbind(means, c(mean(sl), mean(csl)))
     sds <- rbind(sds, c(sd(sl), sd(csl)))
-    mse <- rbind(mse, c(mean((sl - 9.1866)^2), mean((csl - 9.1866)^2)))
+    mse <- rbind(mse, c(mean((sl - 11.67)^2), mean((csl - 11.67)^2)))
 }
 
 # create a data frame for ggplot
