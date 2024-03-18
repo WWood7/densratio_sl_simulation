@@ -58,7 +58,7 @@ cl4 <- Lrnr_gam$new()
 cl5 <- Lrnr_xgboost$new()
 # stack the learners into a super learner
 stack_cl <- Stack$new(cl1, cl2, cl3, cl4, cl5)
-csl <- Lrnr_sl$new(stack_cl, metalearner = Lrnr_solnp$new(
+cls <- Lrnr_sl$new(stack_cl, metalearner = Lrnr_solnp$new(
     eval_function = loss_loglik_binomial))
 
 # define ratio learners
@@ -71,7 +71,7 @@ lr6 <- Lrnr_densratio_classification$new(classifier = cl2, name = 'cl2')
 lr7 <- Lrnr_densratio_classification$new(classifier = cl3, name = 'cl3')
 lr8 <- Lrnr_densratio_classification$new(classifier = cl4, name = 'cl4')
 lr9 <- Lrnr_densratio_classification$new(classifier = cl5, name = 'cl5')
-
+csl <- Lrnr_densratio_classification$new(classifier = cls, name = 'csl')
 
 # stack the learners into a super learner
 stack <- Stack$new(lr1, lr2, lr3, lr4, lr5, lr6, lr7, lr8, lr9) 
