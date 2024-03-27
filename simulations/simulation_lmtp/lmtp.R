@@ -94,9 +94,6 @@ csl_fit1 <- csl$train(task = train_task1)
 # get the predictions
 sl_pre1 <- sl_fit1$predict(task = pre_task1)
 csl_pre1 <- csl_fit1$predict(task = pre_task1)
-true_ratio1 <- I(test$a1 < 1) +  I(test$a1 < 5) *
-    dbinom(test$a1 + 1, 5, 0.5 * I(test$l1 > 1) + 0.1 * I(test$l1 > 2)) / 
-    dbinom(test$a1, 5, 0.5 * I(test$l1 > 1) + 0.1 * I(test$l1 > 2))
 sl_risk1 <- mean(log(bound(sl_pre1)))
 csl_risk1 <- mean(log(bound(csl_pre1)))
 
@@ -121,9 +118,6 @@ csl_fit2 <- csl$train(task = train_task2)
 # get the predictions
 sl_pre2 <- sl_fit2$predict(task = pre_task2)
 csl_pre2 <- csl_fit2$predict(task = pre_task2)
-true_ratio2 <- I(test$a2 < 1) + I(test$a2 < 5) *
-    dbinom(test$a2 + 1, 5, expit(-2 + 1/(1 + 2*test$l2 + test$a1))) / 
-    dbinom(test$a2, 5, expit(-2 + 1/(1 + 2*test$l2 + test$a1)))
 sl_risk2 <- mean(log(bound(sl_pre2)))
 csl_risk2 <- mean(log(bound(csl_pre2)))
 
@@ -149,9 +143,9 @@ csl_fit3 <- csl$train(task = train_task3)
 # get the predictions
 sl_pre3 <- sl_fit3$predict(task = pre_task3)
 csl_pre3 <- csl_fit3$predict(task = pre_task3)
-true_ratio3 <- I(test$a3 < 1) + I(test$a3 < 5) *
-    dbinom(test$a3 + 1, 5, expit(-2 + 1/(1 + 2*test$l3 + test$a2))) / 
-    dbinom(test$a3, 5, expit(-2 + 1/(1 + 2*test$l3 + test$a2)))
+# true_ratio3 <- I(test$a3 < 1) + I(test$a3 < 5) *
+#     dbinom(test$a3 + 1, 5, expit(-2 + 1/(1 + 2*test$l3 + test$a2))) / 
+#     dbinom(test$a3, 5, expit(-2 + 1/(1 + 2*test$l3 + test$a2)))
 sl_risk3 <- mean(log(bound(sl_pre3)))
 csl_risk3 <- mean(log(bound(csl_pre3)))
 
@@ -178,9 +172,9 @@ csl_fit4 <- csl$train(task = train_task4)
 # get the predictions
 sl_pre4 <- sl_fit4$predict(task = pre_task4)
 csl_pre4 <- csl_fit4$predict(task = pre_task4)
-true_ratio4 <- I(test$a4 < 1) + I(test$a4 < 5) *
-    dbinom(test$a4 + 1, 5, expit(1 + test$l4 - 3*test$a3)) / 
-    dbinom(test$a4, 5, expit(1 + test$l4 - 3*test$a3))
+# true_ratio4 <- I(test$a4 < 1) + I(test$a4 < 5) *
+#     dbinom(test$a4 + 1, 5, expit(1 + test$l4 - 3*test$a3)) / 
+#     dbinom(test$a4, 5, expit(1 + test$l4 - 3*test$a3))
 sl_risk4 <- mean(log(bound(sl_pre4)))
 csl_risk4 <- mean(log(bound(csl_pre4)))
 

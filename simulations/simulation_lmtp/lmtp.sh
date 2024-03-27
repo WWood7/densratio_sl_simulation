@@ -22,7 +22,7 @@ username=$(id -nu)
 for i in $(seq 1 ${loops}); do
 	echo "#!/bin/bash" > script$i.sh
 	echo "#SBATCH --array=1-$max_jobs" >> script$i.sh
-	echo "#SBATCH --partition=day-long-cpu" >> script$i.sh
+	echo "#SBATCH --partition=week-long-cpu" >> script$i.sh
 	echo "#SBATCH --error=${myscratch}/err/${analysis}$i.err" >> script$i.sh
 	echo "#SBATCH --output=${myscratch}/out/${analysis}$i.out" >> script$i.sh
 

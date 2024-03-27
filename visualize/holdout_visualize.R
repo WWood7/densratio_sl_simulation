@@ -1,5 +1,6 @@
 library(ggplot2)
 library(reshape2)
+library(patchwork)
 
 # Define the directory containing the .rds files
 directory <- '/Users/winnwu/projects/Benkeser_Lab/simulation_results/holdout'
@@ -20,33 +21,46 @@ for (i in 1:5){
     results[[i]] <- combined_data
 }
 
-
-for (i in 1:5){
+plot_list <- list()
+for (i in 1:4){
     df <- data.frame()
     for (j in 1:ncol(results[[i]])){
         risk_mean <- rep(mean(results[[i]][, j]), nrow(results[[i]]))
         new_df <- data.frame(risk = results[[i]][, j], mean_risk = risk_mean)
         df <- rbind(df, new_df)
     }
-    df$learner <- rep(c('super_learner', 'kernel_lr1', 'kernel_lr2', 'kernel_lr3', 'classification_sl'), 
+    df$learner <- rep(c('Density Ratio Super Learner', 'Kernel-Based Learner1', 'Kernel-Based Learner2', 'Kernel-Based Learner3', 'Classification SL Learner'), 
                            each = 100)
     
     # Add a helper column for sorting 'super_learner' first
-    df$learner_order <- ifelse(df$learner == 'super_learner', 1, 0)
+    df$learner_order <- ifelse(df$learner == 'Density Ratio Super Learner', 1, 0)
     # Now, order 'df' by mean_risk descending and then by learner_order
     df <- df[order(-df$mean_risk, df$learner_order), ]
     
     df <- df[order(-df$mean_risk), ]
+    
+    # Define your RGB colors for each learner
+    learner_colors <- c('Density Ratio Super Learner' = rgb(25/255, 49/255, 52/255), # Red
+                        'Kernel-Based Learner1' = rgb(76/255, 164/255, 162/255), # Blue
+                        'Kernel-Based Learner2' = rgb(76/255, 164/255, 162/255), # Green
+                        'Kernel-Based Learner3' = rgb(76/255, 164/255, 162/255), # Yellow
+                        'Classification SL Learner' = rgb(136/255, 116/255, 87/255))# Purple
+    
+    df$color <- learner_colors[df$learner]
+    
     plot <- ggplot(df, aes(x=factor(learner, levels=unique(learner)), y=risk)) +
-        geom_point(aes(group=learner), position=position_jitter(width=0.1, height=0)) +
-        geom_point(aes(y=mean_risk, x=factor(learner, levels=unique(learner))), shape=3, size=3, color="red") +
+        geom_point(aes(group=learner), position=position_jitter(width=0.1, height=0), color=df$color) +
+        geom_point(aes(y=mean_risk, x=factor(learner, levels=unique(learner))), shape=3, size=3, color='red') +
+        scale_color_identity() +
+        ylim(-1.05, 0.05) +
         theme_minimal() +
-        labs(y=paste0("hold out risk (n=", ssize_list[i],")"), x="Learners") +
+        labs(y=paste0("Hold-Out Risk (n=", ssize_list[i],")"), x="Learners") +
         coord_flip()
-    print(plot)
+    plot_list[[i]] <- plot
 }
 
-
+combined_plot <- wrap_plots(plot_list, ncol = 1) # Adjust ncol as needed
+print(combined_plot)
 
 
 

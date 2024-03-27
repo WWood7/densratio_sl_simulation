@@ -4,10 +4,10 @@ library(reshape2)
 # Define the directory containing the .rds files
 directory <- '/Users/winnwu/projects/Benkeser_Lab/simulation_results/lmtp'
 # ssize_list <- c(100, 500, 1000, 2000, 5000)
-ssize_list <- c(100, 500, 1000)
+ssize_list <- c(100, 500, 1000, 2000)
 
 results <- list(NULL)
-for (i in 1:3){
+for (i in 1:4){
     # Create a list of .rds files
     pattern <- paste0(ssize_list[i], "_.rds$")
     file_list <- list.files(directory, pattern = pattern, full.names = TRUE)
