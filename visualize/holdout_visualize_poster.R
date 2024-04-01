@@ -4,10 +4,10 @@ library(patchwork)
 
 # Define the directory containing the .rds files
 directory <- '/Users/winnwu/projects/Benkeser_Lab/simulation_results/holdout'
-ssize_list <- c(100, 500, 1000, 2000, 5000)
+ssize_list <- c(500, 1000, 2000, 5000)
 
 results <- list(NULL)
-for (i in 1:5){
+for (i in 1:4){
     # Create a list of .rds files
     pattern <- paste0(ssize_list[i], "_.rds$")
     file_list <- list.files(directory, pattern = pattern, full.names = TRUE)
@@ -22,7 +22,7 @@ for (i in 1:5){
 }
 
 plot_list <- list()
-for (i in 1:5){
+for (i in 1:4){
     df <- data.frame()
     for (j in 1:ncol(results[[i]])){
         risk_mean <- rep(mean(results[[i]][, j]), nrow(results[[i]]))
@@ -56,6 +56,24 @@ for (i in 1:5){
         scale_color_identity() +
         ylim(-1.05, 0.05) +
         theme_minimal() +
+        theme(
+            # Main title
+            plot.title = element_text(size = 20, face = "bold"),
+            # Subtitle
+            plot.subtitle = element_text(size = 18),
+            # Caption
+            plot.caption = element_text(size = 18),
+            # Axis titles
+            axis.title.x = element_text(size = 18, face = "bold"),
+            axis.title.y = element_text(size = 18, face = "bold"),
+            # Axis text (tick labels)
+            axis.text.x = element_text(size = 16),
+            axis.text.y = element_text(size = 16),
+            # Legend title (if you have one, remove legend.title = element_blank() if used)
+            legend.title = element_text(size = 18),
+            # Legend text
+            legend.text = element_text(size = 18)
+        ) +
         labs(y=paste0("Hold-Out Risk (n=", ssize_list[i],")"), x="Learners") +
         coord_flip()
     plot_list[[i]] <- plot
