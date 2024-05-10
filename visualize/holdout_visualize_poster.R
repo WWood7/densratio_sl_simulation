@@ -52,27 +52,27 @@ for (i in 1:4){
     
     plot <- ggplot(df, aes(x=factor(learner, levels=unique(learner)), y=risk)) +
         geom_point(aes(group=learner), position=position_jitter(width=0.1, height=0), color=df$color) +
-        geom_point(aes(y=mean_risk, x=factor(learner, levels=unique(learner))), shape=3, size=3, color='red') +
+        geom_point(aes(y=mean_risk, x=factor(learner, levels=unique(learner))), shape=3, size=8, stroke = 2, color='red') +
         scale_color_identity() +
         ylim(-1.05, 0.05) +
         theme_minimal() +
         theme(
             # Main title
-            plot.title = element_text(size = 20, face = "bold"),
+            plot.title = element_text(size = 24, face = "bold"),
             # Subtitle
-            plot.subtitle = element_text(size = 18),
+            plot.subtitle = element_text(size = 22),
             # Caption
-            plot.caption = element_text(size = 18),
+            plot.caption = element_text(size = 22),
             # Axis titles
-            axis.title.x = element_text(size = 18, face = "bold"),
-            axis.title.y = element_text(size = 18, face = "bold"),
+            axis.title.x = element_text(size = 22, face = "bold"),
+            axis.title.y = element_text(size = 22, face = "bold"),
             # Axis text (tick labels)
-            axis.text.x = element_text(size = 16),
-            axis.text.y = element_text(size = 16),
+            axis.text.x = element_text(size = 20),
+            axis.text.y = element_text(size = 20),
             # Legend title (if you have one, remove legend.title = element_blank() if used)
-            legend.title = element_text(size = 18),
+            legend.title = element_text(size = 22),
             # Legend text
-            legend.text = element_text(size = 18)
+            legend.text = element_text(size = 22)
         ) +
         labs(y=paste0("Hold-Out Risk (n=", ssize_list[i],")"), x="Learners") +
         coord_flip()
