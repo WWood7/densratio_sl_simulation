@@ -21,22 +21,23 @@ setdata <- function(n){
 # define a grid of parameters for the simulation
 # 10 replicates at each sample size in each setting
 params = expand.grid(seed = 1:100,
-                     n = c(100, 300, 500, 800, 1000))
+                     n = c(100, 500, 1000, 2000))
 
 
 # define a function to calculate the two on-step estimations
 # based on two ways of density ratio estimation
 onestep_estimator <- function(df){
     
-    # use HAL to run sequential regression and propensity score estimation
+    # use HAL to run the outcome regression & sequential regression
     hal <- Lrnr_hal9001$new()
     
     # estimate E[Y|A, M, W] and get E[Y|A = 0, M, W]
-    model1 <- lm(y ~ a + w, data = df)
+    reg_task1 <- sl3_Task$new(data = df, covariates = c('a', 'm', 'w'), outcome = 'y')
+    model1 <- hal$train(reg_task1)
     new_df1 <- df
     new_df1$a <- 0
-    df$mu_hat <- predict(model1, newdata = new_df1)
-
+    reg_task1_pre <- sl3_Task$new(data = new_df1, covariates = c('a', 'm', 'w'))
+    df$mu_hat <- model1$predict(task = reg_task1_pre)
     
     # estimate E[E[Y|A = 0, M, W]|A=1, W]] on A=1 subset
     # then predict on the whole data set
@@ -53,10 +54,8 @@ onestep_estimator <- function(df){
     
     # calculate the bias correction terms
     # estimate propensity scores p(A|W)
-    # cl2 is a Lrnr_glm
-    ps_task <- sl3_Task$new(data = df, covariates = 'w', outcome = 'a')
-    model3 <- hal$train(ps_task)
-    df$ps1 <- model3$predict()
+    # use an intercept-only model
+    df$ps1 <- mean(df$a)
     df$ps0 <- 1 - df$ps1
     
     # estimate the density ratios
@@ -69,15 +68,17 @@ onestep_estimator <- function(df){
     # define the tasks
     task1 <- sl3_Task$new(data = df, covariates = c('m_sdd', 'w_sdd'), outcome = 'indicator', folds = 5)
     # train the super learners
+    csl1_fit <- csl$train(task1)
     sl_fit <- sl$train(task1)
     
     # get the predictions of p(m|a=1,w) / p(m|a=0, w)
     # for the separate classification sl, manually calculate the 2 odds
-    csl_pres <- sl_fit$learner_fits$`Pipeline(csl->)`$predict()
+    csl_pres <- (csl1_fit$predict() / (1 - csl1_fit$predict())) /
+        (df$ps1 / df$ps0)
     sl_pres <- sl_fit$predict()
     df$ratio_csl <- csl_pres
     df$ratio_sl <- sl_pres
-    df$true_ratio <- dbeta(df$m, 0.6 *df$w + 1, 0.7 *df$w) / dtnorm(df$m, 0.1 * df$w, 1, lower = 0, upper = 1)
+    # df$true_ratio <- dbeta(df$m, 0.6 *df$w + 1, 0.7 *df$w) / dtnorm(df$m, 0.1 * df$w, 1, lower = 0, upper = 1)
     
     # get the final bias correction terms
     df$bias_sl <- as.numeric(df$a == 0) / df$ps0 * df$ratio_sl * (df$y - df$mu_hat) +
@@ -104,6 +105,7 @@ task_id = max_jobs*(nloop-1) + iter
 seed = as.numeric(params[task_id,][1])
 n = as.numeric(params[task_id,][2])
 set.seed(seed)
+
 
 # define classification learners
 cl1 <- Lrnr_bayesglm$new()
@@ -133,12 +135,13 @@ stack <- Stack$new(lr1, lr2, lr3, lr4)
 sl <- Lrnr_sl$new(stack, metalearner = Lrnr_solnp$new(
     eval_function = loss_weighted_loglik_densratio ))
 
+
 # generate a data
 data <- setdata(n)
 results <- c(onestep_estimator(data))
 
 # store the results
-setwd('/projects/dbenkes/winn/mediation3.5')
+setwd('/projects/dbenkes/winn/mediation5')
 filename = paste0("result_seed", seed, "_n", n, "_", ".rds")
 saveRDS(results, file = filename)
 
