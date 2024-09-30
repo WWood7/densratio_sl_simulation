@@ -2,7 +2,7 @@ library(ggplot2)
 library(reshape2)
 
 # Define the directory containing the .rds files
-directory <- '/Users/winnwu/Emory_Projects/Benkeser_Lab/SL_for_Densratio/simulation_results/mediation2'
+directory <- '/Users/winnwu/Emory_Projects/Benkeser_Lab/SL_for_Densratio/simulation_results/mediation5'
 ssize_list <- c(100, 500, 1000, 2000)
 
 results <- list(NULL)

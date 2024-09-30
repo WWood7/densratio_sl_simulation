@@ -22,7 +22,7 @@ username=$(id -nu)
 for i in $(seq 1 ${loops}); do
 	echo "#!/bin/bash" > mediation$i.sh
 	echo "#SBATCH --array=1-$max_jobs" >> mediation$i.sh
-	echo "#SBATCH --partition=day-long-cpu" >> mediation$i.sh
+	echo "#SBATCH --partition=benkeser" >> mediation$i.sh
 	echo "#SBATCH --error=${myscratch}/err/${analysis}$i.err" >> mediation$i.sh
 	echo "#SBATCH --output=${myscratch}/out/${analysis}$i.out" >> mediation$i.sh
 
