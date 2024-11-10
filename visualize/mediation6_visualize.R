@@ -2,11 +2,11 @@ library(ggplot2)
 library(reshape2)
 
 # Define the directory containing the .rds files
-directory <- '/Users/winnwu/Emory_Projects/Benkeser_Lab/SL_for_Densratio/simulation_results/mediation3'
-ssize_list <- c(100, 500, 1000, 2000, 5000)
+directory <- '/Users/winnwu/Emory_Projects/Benkeser_Lab/SL_for_Densratio/simulation_results/mediation6'
+ssize_list <- c(100, 500, 1000, 2000)
 
 results <- list(NULL)
-for (i in 1:5){
+for (i in 1:4){
     # Create a list of .rds files
     pattern <- paste0(ssize_list[i], "_.rds$")
     file_list <- list.files(directory, pattern = pattern, full.names = TRUE)
@@ -24,8 +24,7 @@ for (i in 1:5){
 means <- NULL
 sds <- NULL
 extreme_value_indicators <- NULL
-mse <- NULL
-for (i in 1:5){
+for (i in 1:4){
     # get the indicators
     extreme_value_indicators <- 
         rbind(extreme_value_indicators, apply(abs(results[[i]]) > 12, 2, sum))
@@ -35,17 +34,16 @@ for (i in 1:5){
     # get the means
     means <- rbind(means, c(mean(sl), mean(csl)))
     sds <- rbind(sds, c(sd(sl), sd(csl)))
-    mse <- rbind(mse, c(mean((sl - 9.1866)^2), mean((csl - 9.1866)^2)))
 }
 
 # create a data frame for ggplot
 df <- data.frame(
     est_means = c(means[, 1], means[, 2]),
     est_sds = c(sds[, 1], sds[, 2]),
-    sample_size = rep(c('n=100', 'n=500', 'n=1000', 'n=2000', 'n=5000'), 2),
-    group = rep(c('one-shot sl', 'separate csl'), each = 5)
+    sample_size = rep(c('n=100', 'n=500', 'n=1000', 'n=2000'), 2),
+    group = rep(c('one-shot sl', 'separate csl'), each = 4)
 )
-df$sample_size <- factor(df$sample_size, levels = c('n=100', 'n=500', 'n=1000', 'n=2000', 'n=5000'))
+df$sample_size <- factor(df$sample_size, levels = c('n=100', 'n=500', 'n=1000', 'n=2000'))
 
 # create the plot
 ggplot(df, aes(x = sample_size, y = est_means, color = group, group = group)) +
@@ -55,7 +53,7 @@ ggplot(df, aes(x = sample_size, y = est_means, color = group, group = group)) +
     geom_hline(yintercept = 9.1866, linetype = 'dashed', color = 'black', size = 1) +
     labs(title = "Means of estimates with SD Bands", x = "Sample Size", y = "Means of estimates") +
     theme_minimal() +
-    scale_x_discrete(limits = c('n=100', 'n=500', 'n=1000', 'n=2000', 'n=5000'), expand = c(0, 0))
+    scale_x_discrete(limits = c('n=100', 'n=500', 'n=1000', 'n=2000'), expand = c(0, 0))
     
 
 
