@@ -67,13 +67,12 @@ onestep_estimator <- function(df){
     # define the tasks
     task1 <- sl3_Task$new(data = df, covariates = c('m_sdd', 'w_sdd'), outcome = 'indicator', folds = 5)
     # train the super learners
-    csl_fit <- lr6$train(task1)
     sl_fit <- sl$train(task1)
     
     
     # get the predictions of p(m|a=1,w) / p(m|a=0, w)
     # for the separate classification sl, manually calculate the 2 odds
-    csl_pres <- csl_fit$predict()
+    csl_pres <- sl_fit$learner_fits$`Pipeline(lr6->)`$predict()
     sl_pres <- sl_fit$predict()
     df$ratio_csl <- csl_pres
     df$ratio_sl <- sl_pres
@@ -119,20 +118,20 @@ csl <- Lrnr_sl$new(stack_cl, metalearner = Lrnr_solnp$new(
 
 # define ratio learners
 lr1 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = cl1, name = 'lr1'), 
-                    Lrnr_densratio_classification$new(classifier = cl3, name = '', stage2 = TRUE))
+                    Lrnr_densratio_classification$new(classifier = cl3, conditional_set = 'w_sdd'))
 lr2 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = cl3, name = 'lr2'), 
-                    Lrnr_densratio_classification$new(classifier = cl3, name = '', stage2 = TRUE))
+                    Lrnr_densratio_classification$new(classifier = cl3, conditional_set = 'w_sdd'))
 lr3 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = cl4, name = 'lr3'), 
-                    Lrnr_densratio_classification$new(classifier = cl5, name = '', stage2 = TRUE))
+                    Lrnr_densratio_classification$new(classifier = cl5, conditional_set = 'w_sdd'))
 lr4 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = cl5, name = 'lr4'), 
-                    Lrnr_densratio_classification$new(classifier = cl3, name = '', stage2 = TRUE))
+                    Lrnr_densratio_classification$new(classifier = cl3, conditional_set = 'w_sdd'))
 lr5 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = cl2, name = 'lr5'), 
-                    Lrnr_densratio_classification$new(classifier = cl2, name = '', stage2 = TRUE))
+                    Lrnr_densratio_classification$new(classifier = cl2, conditional_set = 'w_sdd'))
 lr6 <- Pipeline$new(Lrnr_densratio_classification$new(classifier = csl, name = 'lr6'), 
-                    Lrnr_densratio_classification$new(classifier = csl, name = '', stage2 = TRUE))
+                    Lrnr_densratio_classification$new(classifier = csl, name = '', conditional_set = 'w_sdd'))
 
 # stack the learners into a super learner
-stack <- Stack$new(lr1, lr2, lr3, lr4, lr5) 
+stack <- Stack$new(lr1, lr2, lr3, lr4, lr5, lr6) 
 sl <- Lrnr_sl$new(stack, metalearner = Lrnr_solnp$new(
     eval_function = loss_weighted_loglik_densratio ))
 
